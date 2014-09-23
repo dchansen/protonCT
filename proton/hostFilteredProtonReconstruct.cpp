@@ -14,16 +14,10 @@
 #include "hoNDArray_fileio.h"
 #include "check_CUDA.h"
 
-#include "hoCuGPBBSolver.h"
-#include "hoCuPartialDerivativeOperator.h"
 #include "hoCuNDArray_blas.h"
 #include "hoCuNDArray_operators.h"
 
 #include "osSARTSolver.h"
-#include "hoOSGPBBSolver.h"
-#include "hoOSCGSolver.h"
-#include "hoOSCGPBBSolver.h"
-//#include "hoABIBBSolver.h"
 #include "hdf5_utils.h"
 
 #include "encodingOperatorContainer.h"
@@ -36,7 +30,6 @@
 #include "hoCuTvOperator.h"
 #include "hoCuTvPicsOperator.h"
 #include "projectionSpaceOperator.h"
-#include "hoCuNCGSolver.h"
 #include "hoCuFilteredProton.h"
 
 using namespace std;

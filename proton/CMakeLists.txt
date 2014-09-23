@@ -7,7 +7,6 @@ include_directories(
   ${GADGETRON_INCLUDE_DIR}
   ${CMAKE_SOURCE_DIR}/solvers
   ${CMAKE_SOURCE_DIR}/operators
-  ${CMAKE_SOURCE_DIR}/xray
 )
 
 cuda_add_library( proton_kernels SHARED

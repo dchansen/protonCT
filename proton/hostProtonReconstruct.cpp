@@ -14,7 +14,6 @@
 #include "hoNDArray_fileio.h"
 #include "check_CUDA.h"
 
-#include "hoCuGPBBSolver.h"
 #include "hoCuPartialDerivativeOperator.h"
 #include "hdf5_utils.h"
 
@@ -29,7 +28,6 @@
 #include "hoCuTvPicsOperator.h"
 #include "projectionSpaceOperator.h"
 #include "weightingOperator.h"
-#include "ABOCSSolver.h"
 
 #include "hoCuNCGSolver.h"
 #include "hoCuNlcgSolver.h"

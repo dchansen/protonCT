@@ -23,8 +23,6 @@
 #include "hdf5_utils.h"
 
 #include "encodingOperatorContainer.h"
-#include "cuSARTSolver.h"
-#include "cuMLSolver.h"
 #include "cuNCGSolver.h"
 #include "cuNlcgSolver.h"
 #include "cuCgSolver.h"
@@ -34,10 +32,7 @@
 #include "solver_utils.h"
 
 #include "cuTvOperator.h"
-
 #include "circulantPreconditioner.h"
-
-#include "ADMM.h"
 
 using namespace std;
 using namespace Gadgetron;

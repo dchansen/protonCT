@@ -5,10 +5,9 @@ endif (WIN32)
 
 
 cuda_add_library( tomography_solvers SHARED
-  cuNCGSolver.cu solver_utils.cu
+  solver_utils.cu
 )
 install(FILES
-	cuNCGSolver.h 	
 	mlSolver.h
 	cuMLSolver.h
 	cuSARTSolver.h

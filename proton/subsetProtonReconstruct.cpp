@@ -16,7 +16,6 @@
 #include "hoNDArray_fileio.h"
 #include "check_CUDA.h"
 
-#include "hoCuGPBBSolver.h"
 #include "hoCuPartialDerivativeOperator.h"
 #include "hoCuNDArray_blas.h"
 #include "hoCuNDArray_operators.h"
@@ -25,15 +24,8 @@
 #include "osSARTSolver.h"
 #include "protonDROPSolver.h"
 #include "osSPSSolver.h"
-#include "hoOSGPBBSolver.h"
-#include "hoOSCGSolver.h"
-#include "hoOSCGPBBSolver.h"
-#include "hoCuBILBSolver.h"
-//#include "hoABIBBSolver.h"
-#include "hoCuNCGSolver.h"
 #include "cuNCGSolver.h"
 #include "hdf5_utils.h"
-#include "BILBSolver.h"
 
 #include "encodingOperatorContainer.h"
 #include "hoCuOperator.h"
