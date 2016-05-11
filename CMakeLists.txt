@@ -5,7 +5,7 @@ PROJECT(protonCT)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 
 find_path(GADGETRON_CMAKE_MODULES FindGadgetron.cmake HINTS
-$ENV{GADGETRON_HOME}/cmake
+$ENV{GADGETRON_HOME}/share/gadgetron/cmake
 /usr/local/gadgetron/cmake)
 
 list(APPEND CMAKE_MODULE_PATH ${GADGETRON_CMAKE_MODULES})
@@ -18,13 +18,14 @@ endif(NOT GADGETRON_CMAKE_MODULES)
 
 find_package(Gadgetron REQUIRED)
 
+include_directories(  "${GADGETRON_HOME}/include/gadgetron")
+link_directories("${GADGETRON_LIB_DIR}/")
 
+MESSAGE("GADGETRON LIB ${GADGETRON_LIB_DIR}")
 
-include_directories(  "${GADGETRON_HOME}/include")
-
-LINK_DIRECTORIES(${GADGETRON_LIB_DIR})   
 find_package(Boost COMPONENTS program_options system thread REQUIRED)
-find_package(CUDA 4.0 REQUIRED)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --std=c++11")
+find_package(CUDA 7.0 REQUIRED)
 if (CUDA_FOUND)
    MESSAGE("CUDA Found, GPU components will be compiled")
    ADD_DEFINITIONS(-DGTCUDA_FOUND)

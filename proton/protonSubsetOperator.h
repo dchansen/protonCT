@@ -45,9 +45,6 @@ public:
 		if (subset >= operators.size() ) throw std::runtime_error("Subset out of bounds");
 		operators[subset].mult_MH_M(in,out,accumulate);
 	}
-	virtual boost::shared_ptr< linearOperator<ARRAY<float> > > clone() {
-		return linearOperator<ARRAY<float> >::clone(this);
-	}
 
 	virtual void protonCount(ARRAY<float>* count_img, int subset){
 		std::stringstream ss;

@@ -10,24 +10,27 @@
 #include "hoCuNDArray.h"
 
 
-#include "protonSubsetOperator.h"
+#include "hoCuProtonBufferedSubsetOperator.h"
 #include "hoNDArray_fileio.h"
+#include "check_CUDA.h"
 
-
+#include "hoCuGPBBSolver.h"
 #include "hoCuPartialDerivativeOperator.h"
+#include "hoCuNDArray_blas.h"
+#include "hoCuNDArray_operators.h"
 
 #include "osSARTSolver.h"
 
-#include "osMOMSolverD.h"
-
+#include "hoOSGPBBSolver.h"
 #include "hdf5_utils.h"
 
+#include "encodingOperatorContainer.h"
+#include "hoCuOperator.h"
+#include "hoImageOperator.h"
+#include "identityOperator.h"
 #include <boost/program_options.hpp>
-#include "solver_utils.h"
 #include "vector_td_io.h"
-#include "hoSolverUtils.h"
-#include "cuSolverUtils.h"
-
+#include "projectionSpaceOperator.h"
 using namespace std;
 using namespace Gadgetron;
 typedef float _real;
@@ -50,10 +53,6 @@ int main( int argc, char** argv)
 	int iterations;
 	int device;
 	int subsets;
-	bool use_hull,use_weights, use_non_negativity;
-	float beta,gamma;
-	float huber;
-	float tv_weight;
 	po::options_description desc("Allowed options");
 	desc.add_options()
 			("help", "produce help message")
@@ -66,14 +65,7 @@ int main( int argc, char** argv)
 			("prior,P", po::value<std::string>(),"Prior image filename")
 			("prior-weight,k",po::value<float>(),"Weight of the prior image")
 			("device",po::value<int>(&device)->default_value(0),"Number of the device to use (0 indexed)")
-			("TV,T",po::value<float>(&tv_weight)->default_value(0),"TV Weight ")
 			("subsets,n", po::value<int>(&subsets)->default_value(10), "Number of subsets to use")
-			("beta",po::value<float>(&beta)->default_value(1),"Step size for SART")
-			("gamma",po::value<float>(&gamma)->default_value(1e-1),"Relaxation Gamma")
-			("huber",po::value<float>(&huber)->default_value(0),"Huber value")
-			("use_hull",po::value<bool>(&use_hull)->default_value(true),"Estimate convex hull of object")
-			("use_weights",po::value<bool>(&use_weights)->default_value(false),"Use weights if available. ")
-			("use_non_negativity",po::value<bool>(&use_non_negativity)->default_value(true),"Use non-negativity constraint. ")
 	;
 
 	po::variables_map vm;
@@ -93,74 +85,77 @@ int main( int argc, char** argv)
 		else if (a.type() == typeid(float)) std::cout << it->second.as<float>();
 		else if (a.type() == typeid(vector_td<float,3>)) std::cout << it->second.as<vector_td<float,3> >();
 		else if (a.type() == typeid(vector_td<int,3>)) std::cout << it->second.as<vector_td<int,3> >();
-		else if (a.type() == typeid(bool)) std::cout << it->second.as<bool>();
 		else std::cout << "Unknown type" << std::endl;
 		std::cout << std::endl;
 	}
 	cudaSetDevice(device);
+	//cudaDeviceReset();
 
 
+/*
+  hoCuGPBBSolver< _real> solver;
 
-	osMOMSolverD<hoCuNDArray<float>> solver;
+  solver.set_max_iterations( iterations);
 
-
-	  solver.set_non_negativity_constraint(use_non_negativity);
-	  solver.set_max_iterations(iterations);
-	  solver.set_huber(huber);
-	  solver.set_reg_steps(5);
-	  solver.set_dump(false);
-	  solver.set_tau(1e-4);
-
-
-  solver.set_non_negativity_constraint(use_non_negativity);
+  solver.set_output_mode( hoCuGPBBSolver< _real>::OUTPUT_VERBOSE );*/
+	//osSARTSolver<hoCuNDArray<_real> > solver;
+	hoOSGPBBSolver<hoCuNDArray<_real> > solver;
+  solver.set_non_negativity_constraint(true);
   solver.set_max_iterations(iterations);
+  boost::shared_ptr< hoCuProtonBufferedSubsetOperator<_real> > E (new hoCuProtonBufferedSubsetOperator<_real>(subsets) );
+  boost::shared_ptr<hoCuNDArray<_real> >  projections = E->load_data(dataName,physical_dims,origin,background);
 
-  H5Eset_auto1(0,0);//Disable hdf5 error reporting
   std::vector<size_t> rhs_dims(&dimensions[0],&dimensions[3]); //Quick and dirty vector_td to vector
-std::cout << "Loading data" << std::endl;
-  boost::shared_ptr<protonDataset<hoCuNDArray> >  data(new protonDataset<hoCuNDArray>(dataName,use_weights));
-std::cout << "Done" << std::endl;
-  data = protonDataset<hoCuNDArray>::shuffle_dataset(data,subsets);
-
-  data->preprocess(rhs_dims,physical_dims,false);
-
-  boost::shared_ptr< protonSubsetOperator<hoCuNDArray> > E (new protonSubsetOperator<hoCuNDArray>(data->get_subsets(), physical_dims) );
-
   E->set_domain_dimensions(&rhs_dims);
-  E->set_codomain_dimensions(data->get_projections()->get_dimensions().get());
+  E->set_codomain_dimensions(projections->get_dimensions().get());
+  boost::shared_ptr<hoCuNDArray<_real > > prior;
+    if (vm.count("prior")){
+   	  std::cout << "Prior image regularization in use" << std::endl;
+  		prior = boost::static_pointer_cast<hoCuNDArray<_real > >(read_nd_array<_real >(vm["prior"].as<std::string>().c_str()));
 
-  if (tv_weight > 0){
-
-  	auto Dx = boost::make_shared<hoCuPartialDerivativeOperator<float,3>>(0);
-  	Dx->set_weight(tv_weight);
-  	Dx->set_domain_dimensions(&rhs_dims);
-  	Dx->set_codomain_dimensions(&rhs_dims);
-
-  	auto Dy = boost::make_shared<hoCuPartialDerivativeOperator<float,3>>(1);
-  	Dy->set_weight(tv_weight);
-  	Dy->set_domain_dimensions(&rhs_dims);
-  	Dy->set_codomain_dimensions(&rhs_dims);
-
-  	auto Dz = boost::make_shared<hoCuPartialDerivativeOperator<float,3>>(2);
-  	Dz->set_weight(tv_weight);
-  	Dz->set_domain_dimensions(&rhs_dims);
-  	Dz->set_codomain_dimensions(&rhs_dims);
+  		prior->reshape(&rhs_dims);
+  		_real offset = _real(0.01);
+  		//cuNDA_add(offset,prior.get());
 
 
+  		if (vm.count("prior-weight")){
 
-  	solver.add_regularization_group({Dx,Dy,Dz});
-  }
+  		//boost::shared_ptr<hoImageOperator<_real> > I (new hoImageOperator<_real > ());
+  		//I->compute(prior.get());
+  			boost::shared_ptr<identityOperator<hoCuNDArray<_real> > > Itmp ( new identityOperator<hoCuNDArray<_real> >);
 
+  			boost::shared_ptr<projectionSpaceOperator<hoCuNDArray<_real> > > I (new projectionSpaceOperator<hoCuNDArray<_real> >(Itmp));
+
+  		I->set_weight(vm["prior-weight"].as<float>());
+
+  		I->set_codomain_dimensions(&rhs_dims);
+  		I->set_domain_dimensions(&rhs_dims);
+  		I->set_projections(prior);
+  		//hoCuNDArray<_real> tmp = *prior;
+
+
+  		//I->mult_M(prior.get(),&tmp);
+  		solver.add_regularization_operator(I);
+
+  		}
+  		solver.set_x0(prior);
+    }
   solver.set_encoding_operator(E);
   solver.set_output_mode(baseSolver::OUTPUT_VERBOSE);
+	//hoCuNDA_clear(projections.get());
+	//CHECK_FOR_CUDA_ERROR();
 
 
-  boost::shared_ptr< hoCuNDArray<_real> > result;
-  {
-  	GPUTimer timer("Time to solve");
-  	result = solver.solve(data->get_projections().get());
-  }
+	//float res = dot(projections.get(),projections.get());
 
+	boost::shared_ptr< hoCuNDArray<_real> > result = solver.solve(projections.get());
+
+	hoCuNDArray<_real> tmp_proj(projections->get_dimensions());
+	E->mult_M(result.get(),&tmp_proj,false);
+	tmp_proj -= *projections;
+
+	std::cout << "L2 norm of residual: " << nrm2(&tmp_proj) << std::endl;
+	//write_nd_array<_real>(result.get(), (char*)parms.get_parameter('f')->get_string_value());
 	std::stringstream ss;
 	for (int i = 0; i < argc; i++){
 		ss << argv[i] << " ";

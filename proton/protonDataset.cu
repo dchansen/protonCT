@@ -33,6 +33,8 @@ static size_t calculate_batch_size(){
 
 template<template<class> class ARRAY> protonDataset<ARRAY>::protonDataset(const std::string & filename, bool load_weights){
 	hid_t file_id = H5Fopen(filename.c_str(), H5F_ACC_RDONLY, H5P_DEFAULT);
+	if (file_id < 0) throw std::runtime_error("Failed to open specified hdf5 file.");
+
 	std::vector<std::string> groupnames = group_paths("/",file_id);
 	size_t num_element = get_num_elements(file_id,groupnames);
 	std::vector<size_t> dims;
@@ -113,7 +115,7 @@ template<> void protonDataset<cuNDArray>::crop_splines(std::vector<size_t> & img
 }
 
 template<> void protonDataset<hoCuNDArray>::crop_splines(std::vector<size_t> & img_dims, floatd3 physical_dims, float background){
-	size_t max_batch_size = calculate_batch_size();
+	size_t max_batch_size = calculate_batch_size()/2;
 
 
 	size_t elements = spline_data->get_number_of_elements()/4;
@@ -121,6 +123,7 @@ template<> void protonDataset<hoCuNDArray>::crop_splines(std::vector<size_t> & i
 
 
 	for (size_t n = 0; n < (elements-1)/max_batch_size+1; n++){
+		std::cout << "Cropping spline batch " << n << std::endl;
 
 		size_t batch_size = std::min(max_batch_size,elements-offset);
 		std::vector<size_t> batch_dim;

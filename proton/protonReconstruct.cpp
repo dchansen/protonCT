@@ -8,31 +8,27 @@
 #include <boost/program_options.hpp>
 #include "cuNDArray.h"
 #include "cuCgSolver.h"
-#include "cuImageOperator.h"
 #include "splineBackprojectionOperator.h"
-#include "cuPartialDerivativeOperator.h"
-#include "cuLaplaceOperator.h"
 #include "hoNDArray_fileio.h"
-#include "check_CUDA.h"
 #include "cuGpBbSolver.h"
 #include "identityOperator.h"
 
 #include "hoNDArray_math.h"
 
-#include <sstream>
 #include "hdf5_utils.h"
 
 #include "encodingOperatorContainer.h"
+
 #include "cuNCGSolver.h"
 #include "cuNlcgSolver.h"
-#include "cuCgSolver.h"
-#include "vector_td_io.h"
-#include "protonPreconditioner.h"
 #include "cuLbfgsSolver.h"
 #include "solver_utils.h"
 
 #include "cuTvOperator.h"
+
 #include "circulantPreconditioner.h"
+#include "vector_td_io.h"
+
 
 using namespace std;
 using namespace Gadgetron;
@@ -90,30 +86,6 @@ template <class T> class EXPORTGPUSOLVERS cuNlcgSolver2 : public cuNlcgSolver<T 
     };
   };
 
-/*
-boost::shared_ptr< cuNDArray<float> >  recursiveSolver(cuNDArray<float> * rhs,cuCGSolver<float, float> * cg,int depth){
-	std::cout << "Recursion depth " << depth << " reached" << std::endl;
-	if (depth == 0){
-		std::cout << "Running solver for depth " << depth  << std::endl;
-		return cg->solve(rhs);
-	} else {
-		boost::shared_ptr< cuNDArray<float> > rhs_temp = cuNDA_downsample<float,2>(rhs);
-
-		boost::shared_ptr< cuNDArray<float> > guess = recursiveSolver(rhs_temp.get(),cg,depth-1);
-		guess = cuNDA_upsample<float,2>(guess.get());
-		std::cout << "Running solver for depth " << depth  << std::endl;
-		return cg->solve(rhs,guess.get());
-
-	}
-
-}
- */
-
-/*
-template<class T> void notify(T val){
-	std::cout << val <<std::endl;
-}
- */
 
 template<class T> void notify(std::string val){
 	std::cout << val << std::endl;

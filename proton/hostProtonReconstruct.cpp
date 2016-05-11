@@ -12,29 +12,22 @@
 
 #include "splineBackprojectionOperator.h"
 #include "hoNDArray_fileio.h"
-#include "check_CUDA.h"
 
-#include "hoCuPartialDerivativeOperator.h"
+#include "hoCuGPBBSolver.h"
 #include "hdf5_utils.h"
 
-#include "encodingOperatorContainer.h"
-#include "hoCuOperator.h"
-#include "hoImageOperator.h"
 #include "identityOperator.h"
 #include <boost/program_options.hpp>
-#include "vector_td_io.h"
 
 #include "hoCuTvOperator.h"
 #include "hoCuTvPicsOperator.h"
 #include "projectionSpaceOperator.h"
 #include "weightingOperator.h"
 
+#include "vector_td_io.h"
 #include "hoCuNCGSolver.h"
-#include "hoCuNlcgSolver.h"
+#include "solver_utils.h"
 
-//#include "hoCuLbfgsSolver.h"
-
-#include "protonPreconditioner.h"
 
 
 using namespace std;

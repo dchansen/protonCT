@@ -5,13 +5,18 @@
  *      Author: u051747
  */
 #include <iostream>
+#include "parameterparser.h"
 #include "cuNDArray.h"
 #include "hoCuNDArray.h"
-#include "cuNDArray_fileio.h"
+#include "cuNDArray_math.h"
+
 
 #include "splineBackprojectionOperator.h"
+#include "hoNDArray_fileio.h"
 
 #include "hoCuGPBBSolver.h"
+#include "hoCuPartialDerivativeOperator.h"
+
 
 #include "hdf5_utils.h"
 
@@ -20,13 +25,11 @@
 #include "FilteredProton.h"
 #include "vector_td_io.h"
 #include "vector_td_operators.h"
-#include "solver_utils.h"
-#include "hoNDArray_math.h"
 using namespace std;
 using namespace Gadgetron;
+typedef float _real;
 
-
-typedef solver<hoCuNDArray<float>, hoCuNDArray<float> > baseSolver;
+typedef solver<hoCuNDArray<_real>, hoCuNDArray<_real> > baseSolver;
 namespace po = boost::program_options;
 int main( int argc, char** argv)
 {
@@ -35,7 +38,7 @@ int main( int argc, char** argv)
 	// Parse command line
 	//
 
-	float background =  0.00106;
+	_real background =  0.00106;
 	std::string dataName;
 	std::string outputFile;
 	vector_td<int,3> dimensions;
@@ -85,7 +88,7 @@ int main( int argc, char** argv)
 
 	std::vector<size_t> rhs_dims(&dimensions[0],&dimensions[3]); //Quick and dirty vector_td to vector
 
-	boost::shared_ptr< protonDataset<hoCuNDArray> > data(new protonDataset<hoCuNDArray>(dataName,use_weights) );
+	auto  data = boost::make_shared<protonDataset<hoCuNDArray>>(dataName,use_weights);
 	if (use_hull) //If we don't estimate the hull, we should use a larger volume
 		data->preprocess(rhs_dims,physical_dims,use_hull,background);
 	else {
@@ -98,7 +101,7 @@ int main( int argc, char** argv)
 	if (data->get_weights())
 		*data->get_projections() *= *data->get_weights(); //Have to scale projection data by weights before handing it to the solver. Write up the cost function and see why.
 
-	boost::shared_ptr< hoCuNDArray<float> > result;
+	boost::shared_ptr< hoCuNDArray<_real> > result;
 	{
 		GPUTimer tim("Reconstruction time:");
 		result = E.calculate(rhs_dims,physical_dims,data,estimate_missing);
@@ -118,14 +121,16 @@ int main( int argc, char** argv)
 	//*result *= s;
 
 	std::cout << "Calculation done, saving " << std::endl;
-	//write_nd_array<float>(result.get(), (char*)parms.get_parameter('f')->get_string_value());
+	//write_nd_array<_real>(result.get(), (char*)parms.get_parameter('f')->get_string_value());
 	std::stringstream ss;
 	for (int i = 0; i < argc; i++){
 		ss << argv[i] << " ";
 	}
+
+	std::cout << "Image norm " << asum(result.get())/result->get_number_of_elements() << std::endl;
 	saveNDArray2HDF5<3>(result.get(),outputFile,physical_dims,origin,ss.str(), -1);
 
-	std::cout << "Mean: " << sum(result.get())/result->get_number_of_elements() << std::endl;
+
 }
 
 
